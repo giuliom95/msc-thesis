@@ -28,15 +28,15 @@
 
 
 \usepackage[
-  title={Is Oil the future?},
-  author={Lars K.},
-  type=bachelor,
-  institute=iaas, % or other institute names - or just a plain string using {Demo\\Demo...}
-  course={Medieninformatik},
-  examiner={Prof.\ Dr.\ Uwe Fessor},
-  supervisor={Dipl.-Inf.\ Roman Tiker,\\Dipl.-Inf.\ Laura Stern,\\Otto Normalverbraucher,\ M.Sc.},
-  startdate={July 5, 2018},
-  enddate={January 5, 2019}
+  title={Visual Exploration Of Light Transport In Path Tracing},
+  author={Giulio Martella},
+  type=master,
+  institute=vis, % or other institute names - or just a plain string using {Demo\\Demo...}
+  course={Computer Science},
+  examiner={(?)\ Michael Sedlmair},
+  supervisor={Guido Reina\\Michael Becher\\Patrik Gralka},
+  startdate={July 1, 2020},
+  enddate={January 4, 2021}
 ]{scientific-thesis-cover}
 
 \input{acronyms}
@@ -120,29 +120,29 @@
 % \addtocontents{toc}{\protect\newpage}
 % an der passenden Stelle im Fließtext erzwungen werden.
 
-\listoffigures
-\listoftables
+%\listoffigures
+%\listoftables
 
 %Wird nur bei Verwendung von der lstlisting-Umgebung mit dem "caption"-Parameter benoetigt
 %\lstlistoflistings
 %ansonsten:
-\ifdeutsch
-  \listof{Listing}{Verzeichnis der Listings}
-\else
-  \listof{Listing}{List of Listings}
-\fi
+%\ifdeutsch
+%  \listof{Listing}{Verzeichnis der Listings}
+%\else
+%  \listof{Listing}{List of Listings}
+%\fi
 
 %mittels \newfloat wurde die Algorithmus-Gleitumgebung definiert.
 %Mit folgendem Befehl werden alle floats dieses Typs ausgegeben
-\ifdeutsch
-  \listof{Algorithmus}{Verzeichnis der Algorithmen}
-\else
-  \listof{Algorithmus}{List of Algorithms}
-\fi
+%\ifdeutsch
+%  \listof{Algorithmus}{Verzeichnis der Algorithmen}
+%\else
+%  \listof{Algorithmus}{List of Algorithms}
+%\fi
 %\listofalgorithms %Ist nur für Algorithmen, die mittels \begin{algorithm} umschlossen werden, nötig
 
 % Abkürzungsverzeichnis
-\printnoidxglossaries
+%\printnoidxglossaries
 
 \iftex4ht
 \else
@@ -165,37 +165,6 @@
 \ifoot[]{}
 
 
-%% vv  scroll down for content  vv %%
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -204,35 +173,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\chapter{Introduction}
-
-This thesis starts with \cref{chap:k2}.
-
-We can also typeset \verb|<text>verbatim text</text>|.
-Backticks are also rendered correctly: \verb|`words in backticks`|.
-
-\chapter{Chapter Two}
-\label{chap:k2}
-
-LaTeX hints are provided in \cref{chap:latexhints}.
-
-\blinddocument
-
-\chapter{Related Work}
-
-Describe relevant scientific literature related to your work.
-
-\chapter{Conclusion and Outlook}
-\label{chap:zusfas}
-
-\section*{Outlook}
+\include{chapters/chapter_thetool/text}
 
 \printbibliography
 
-All links were last followed on March 17, 2018.
+All links were last followed on \today.
 
 \appendix
-\input{latexhints-english}
+\include{chapters/appendix_scene/text}
 
 \pagestyle{empty}
 \renewcommand*{\chapterpagestyle}{empty}

@@ -1,52 +1,117 @@
 % Encoding: UTF-8
 
-%%%
-%
-%Beim Erstellen der Bibtex-Datei wird empfohlen darauf zu achten, dass die DOI aufgeführt wird.
-%
-%%%
+@inproceedings{kajiya1986rendering,
+  title={The rendering equation},
+  author={Kajiya, James T},
+  booktitle={Proceedings of the 13th annual conference on Computer graphics and interactive techniques},
+  pages={143--150},
+  year={1986}
+}
 
-@Book{WSPA,
-  author    = {Sanjiva Weerawarana and Francisco Curbera and Frank Leymann and Tony Storey and Donald F. Ferguson},
-  title     = {Web Services Platform Architecture : SOAP, WSDL, WS-Policy, WS-Addressing, WS-BPEL, WS-Reliable Messaging, and More},
-  year      = {2005},
-  publisher = {Prentice Hall PTR},
-  isbn      = {0131488740},
-  doi       = {10.1.1/jpb001},
+@article{lafortune1993bi,
+  title={Bi-directional path tracing},
+  author={Lafortune, Eric P and Willems, Yves D},
+  year={1993}
+}
+
+@inproceedings{veach1997metropolis,
+  title={Metropolis light transport},
+  author={Veach, Eric and Guibas, Leonidas J},
+  booktitle={Proceedings of the 24th annual conference on Computer graphics and interactive techniques},
+  pages={65--76},
+  year={1997}
+}
+
+@book{jarosz2008efficient,
+  title={Efficient Monte Carlo methods for light transport in scattering media},
+  author={Jarosz, Wojciech},
+  year={2008},
+  publisher={Citeseer}
+}
+
+@article{lafortune1996mathematical,
+  title={Mathematical models and Monte Carlo algorithms for physically based rendering},
+  author={Lafortune, Eric},
+  journal={Department of Computer Science, Faculty of Engineering, Katholieke Universiteit Leuven},
+  volume={20},
+  pages={74--79},
+  year={1996}
+}
+
+@article{robinet2014gltf,
+  title={\texttt{glTF}: Designing an open-standard runtime asset format},
+  author={Robinet, Fabrice and Arnaud, R{\'e}mi and Parisi, Tony and Cozzi, Patrick},
+  journal={GPU Pro},
+  volume={5},
+  pages={375--392},
+  year={2014}
+}
+
+@misc{rfc8259,
+  series =	{Request for Comments},
+  number =	8259,
+  howpublished =	{RFC 8259},
+  publisher =	{RFC Editor},
+  doi =		{10.17487/RFC8259},
+  url =		{https://rfc-editor.org/rfc/rfc8259.txt},
+  author =	{Tim Bray},
+  title =		{{The JavaScript Object Notation (JSON) Data Interchange Format}},
+  pagetotal =	16,
+  year =		2017,
+  month =		dec,
+  abstract =	{JavaScript Object Notation (JSON) is a lightweight, text-based, language-independent data interchange format. It was derived from the ECMAScript Programming Language Standard. JSON defines a small set of formatting rules for the portable representation of structured data. This document removes inconsistencies with other specifications of JSON, repairs specification errors, and offers experience-based interoperability guidance.},
 }
 
 
-% !! DO NOT USE `label =   {ASF}` in other Misc entries !!
-
-@Misc{ApacheODE,
-  author = {{The Apache Software Foundation}},
-  title =  {Apache ODE\texttrademark{} -- The Orchestration Director Engine},
-  year =   {2016},
-  label =  {ASF},
-  url =    {http://ode.apache.org}
+@misc{smallpt,
+  title = {smallpt: Global Illumination in 99 lines of C++},
+  author = {Beason, Kevin},
+  url = {https://web.archive.org/web/20200512225126/http://www.kevinbeason.com/smallpt/},
+  note = {Captured:  May 12, 2020},
+  year = {2007}
 }
 
-@Article{RVvdA2016,
-  author =    {H.A. Reijers and I. Vanderfeesten and W.M.P. van der Aalst},
-  title =     {The effectiveness of workflow management systems: A longitudinal study},
-  journal =   {International Journal of Information Management},
-  year =      {2016},
-  volume =    {36},
-  number =    {1},
-  pages =     {126--141},
-  month =     feb,
-  doi =       {10.1016/j.ijinfomgt.2015.08.003},
-  publisher = {Elsevier {BV}}
+@techreport{handrews-json-schema-02,
+	number =	{draft-handrews-json-schema-02},
+	type =		{Internet-Draft},
+	institution =	{Internet Engineering Task Force},
+	publisher =	{Internet Engineering Task Force},
+	note =		{Work in Progress},
+	url =		{https://datatracker.ietf.org/doc/html/draft-handrews-json-schema-02},
+        author =	{Austin Wright and Henry Andrews and Ben Hutton and Greg Dennis},
+	title =		{{JSON Schema: A Media Type for Describing JSON Documents}},
+	pagetotal =	75,
+	year =		2019,
+	month =		sep,
+	day =		17,
+	abstract =	{JSON Schema defines the media type "application/schema+json", a JSON- based format for describing the structure of JSON data. JSON Schema asserts what a JSON document must look like, ways to extract information from it, and how to interact with it. The "application/ schema-instance+json" media type provides additional feature-rich integration with "application/schema+json" beyond what can be offered for "application/json" documents.},
 }
 
-@Book{Duden2001,
-  author    = {Duden},
-  title     = {Die Deutsche Rechtschreibung},
-  year      = {2001},
-  edition   = {22., völlig neu bearbeitete und erweiterte Auflage},
-  note      = {Aktualisierter Nachdruck},
-  publisher = {Dudenverlag},
-  isbn      = {3-411-04012-2},
+@book{pharr2016physically,
+  title={Physically based rendering: From theory to implementation},
+  author={Pharr, Matt and Jakob, Wenzel and Humphreys, Greg},
+  year={2016},
+  publisher={Morgan Kaufmann}
 }
+
+@inproceedings{gribble2012ray,
+  title={Ray tracing visualization toolkit},
+  author={Gribble, Christiaan and Fisher, Jeremy and Eby, Daniel and Quigley, Ed and Ludwig, Gideon},
+  booktitle={Proceedings of the ACM SIGGRAPH Symposium on Interactive 3D Graphics and Games},
+  pages={71--78},
+  year={2012}
+}
+
+@inproceedings{simons2019applying,
+  title={Applying visual analytics to physically based rendering},
+  author={Simons, Gerard and Herholz, Sebastian and Petitjean, Victor and Rapp, Tobias and Ament, Marco and Lensch, Hendrick and Dachsbacher, Carsten and Eisemann, Martin and Eisemann, Elmar},
+  booktitle={Computer Graphics Forum},
+  volume={38},
+  number={1},
+  pages={197--208},
+  year={2019},
+  organization={Wiley Online Library}
+}
+
 
 @Comment{jabref-meta: databaseType:biblatex;}

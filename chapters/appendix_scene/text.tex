@@ -1,0 +1,106 @@
+\chapter{Scene format JSON schema}
+\label{json_schema}
+
+Is hereby presented a JSON schema\cite{handrews-json-schema-02} on which the JSON file of the scene description format must be built upon. Refer to Subsection \ref{scene_format} for more information on the scene description format. 
+\begin{lstlisting}
+{
+	"type": "object",
+	"properties": {
+		"camera": {
+			"type": "object",
+			"description": "Camera properties"
+			"properties": {
+				"eye": {
+					"type": "array",
+					"description": "World position of camera eye"
+					"minItems": 3,
+					"maxItems": 3,
+					"items": {
+						"type": "number"
+					}
+				},
+				"look": {
+					"type": "array",
+					"description":
+						"World normalized vector of camera look direction"
+					"minItems": 3,
+					"maxItems": 3,
+					"items": {
+						"type": "number"
+					}
+				}
+			}
+		},
+		"render": {
+			"type": "object",
+			"description": "Rendered image properties",
+			"properties": {
+				"width": {
+					"type": "integer",
+					"description": "Width (in pixels) of the rendered image"
+				},
+				"height": {
+					"type": "integer",
+					"description": "Width (in pixels) of the rendered image"
+				},
+				"spp": {
+					"type": "integer",
+					"description": "Samples Per Pixel of the rendered image"
+				}
+			}
+		},
+		"geometries":{
+			"type": "array"
+			"items": {
+				"type": "object",
+				"description": "A single geometry",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"buffers": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"description": "Buffer description",
+							"items" {
+								"type": {
+									"type": "string",
+									"description": "Type of buffer",
+									"enum": ["indices", "vertices"],
+								},
+								"offset": {
+									"type": "integer",
+									"description": 
+										"Offset (in bytes) relative to the binary file"
+								},
+								"size": {
+									"type": "integer",
+									"description": "Size (in bytes)"
+								}
+							}
+						}
+					},
+					"material": {
+						"type": "object",
+						"description": "Basic material description",
+						"items" {
+							"color": {
+								"type": "array",
+								"minItems": 3,
+								"maxItems": 3,
+								"items": {
+									"type": "number"
+								}
+							}
+							"translucent": {
+								"type": "boolean"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+\end{lstlisting}
