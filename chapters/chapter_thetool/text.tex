@@ -16,6 +16,13 @@ Once the rendering is done and the data is collected, the visualization client c
 
 \subsection{\texttt{Gatherer} class}
 All data gathering is managed by a header-only library that exposes one single class called \texttt{Gatherer}. To correctly gather data from a path tracer the user must initialize an instance of \texttt{Gatherer} at any point before the main loop and then call its methods where appropriate while tracing paths. Signatures of the constructor and the methods of \texttt{Gatherer} is presented in Listing \ref{gatherer_signatures}.
+The constructor needs a folder path where the data will be stored and the number of threads --- \texttt{nthreads} --- the path tracer will run on. The \texttt{addbounce} method has to be called every time a path bounces and the position of the bounce is final. It has that position in world coordinates as an argument  alongside a \textit{thread id}, an integer that goes from zero to \texttt{nthreads} and unequivocally identifies a thread.
+When all the computations on a path are done and the radiance carried by it is known, the user has to call the \texttt{finalizepath} method passing the thread id, the radiance and a \texttt{CameraSample} struct --- see Listing \ref{gatherer_datastructures} for its layout.
+
+As hinted by the \texttt{nthreads} and \texttt{tid} arguments of \texttt{Gatherer} methods, the class has been designed to be able to gather data from path tracers that evaluate paths on multiple threads parallelly. This extra effort has been made to not force users to use only single-threaded path tracers. It has to be though noted that the \texttt{Gatherer} class assumes each path is entirely resolved on just one thread: splitting the computations of a single path on multiple threads is not currently supported.
+
+Datasets gathered from the rendering of high quality scenes can get big fast. To avoid any memory saturation problems and to leave as many resources as possible to the path tracing computations, \texttt{Gatherer} allocates a fixed amount of memory per thread and will use only that; it will store data on disk when any of these memory chunks are about to fill completely. In order to write to disk without introducing any software barrier in the multi thread code, each thread writes on a set of files that are written only it. The destructor of \texttt{Gatherer} takes care of stitching all these file sets into one, being extra careful to keep the indices consistent. This is sadly a fully disk bound operation and it may take a while, especially on rather big dataset.
+
 
 \begin{Listing}
 	\begin{lstlisting}
@@ -57,7 +64,7 @@ public:
 	half u, v;
 };
 	\end{lstlisting}
-	\caption{Data structures used inside the \texttt{Gatherer} class.}
+	\caption{Data structures used inside the \texttt{Gatherer} class. The \texttt{half} type contains a 16bit precision floating point number complying to the IEEE 754 standard.}
 	\label{gatherer_datastructures}
 \end{Listing}
 
