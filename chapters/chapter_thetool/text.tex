@@ -12,7 +12,30 @@ Once the rendering is done and the data is collected, the visualization client c
 \section{Data gatherer}
 
 \subsection{The data to gather}
-As said in subsection \ref{size_considerations},
+Until now it has been said that the gatherer has to be able to store “the paths with some useful data”, but how does one store a path and what is useful data have not been defined yet. In the beginning, the focus was on just visualizing paths in an interactive scene rendering so that the user could see how paths interact with the scene. To achieve that it was clear the actual geometry of all paths had to be stored. This meant storing for each path a camera sample and all of its bounces.
+Several ways of storing path bounces had been considered, such as storing each bounce as a direction and a distance, but the most n\"aive solution has been opted: each bounce is stored as a 3-dimensional point in world space.
+
+This immediately raised some concerns about how much memory would be required to store all these points: let us calculate how many bytes it would take to just store the bounces of all paths needed to produce image \ref{hall_render}. It is 512 pixels wide and 512 pixels tall, it has been rendered with 512 samples per pixel --- spp --- each with a depth of maximum 10 --- this means that each of the 512 paths shoot every pixel bounced in the scene at most 10 times. Storing the points as a triplet of single precision float numbers --- 4 bytes, the C++ built-in \texttt{float} type ---  we would have:
+\begin{equation}
+	\label{rough_bounce_size_estimation}
+	(512 \times 512) pixels \times 512 spp \times 10 bounces \times 3 dimensions \times 4 bytes \approx 15GB
+\end{equation}
+\begin{figure}
+	\centering
+	\includegraphics[height=8cm]{chapters/chapter_thetool/hall}
+	\caption{\textit{Modern Hall} scene \cite{bitterliscenes} rendered by Yocto/GL \cite{pellacini2019yocto}. It is a 512x512, 512spp image; maximum bounces per path are set to 10.}
+	\label{hall_render}
+\end{figure}
+As said just above, the paths in this case bounce at most 10 times: most paths are terminated way before either when they bounce out of the scene or --- in some path tracers --- they hit a light. This leads to the need of an additional buffer storing the amount of bounces each path has. Put with computer graphics terminology we might say the points positions buffer represents the \textit{geometry} of the paths while this “path lengths” buffer is the \textit{topology}. 
+This new buffer needs to contain integers and, considering that the standard C++ \texttt{int} built-in type on x86\_64 machines is 4 bytes long, we would have that the size of the buffer in the context of figure \ref{hall_render} would approximately be:
+\begin{equation}
+	\label{rough_lenghts_size_estimation}
+	(512 \times 512) pixels \times 512 spp \times 4 bytes \approx 500MB
+\end{equation}
+Now this is not an unmanageable amount of data, but since the tool has to be usable on consumer grade machines, reducing those number has been one of the main priorities during the early stages of development. The most effective change that has been made is to simply use smaller primitive data types. 
+Single precision floats had been almost immediately replaced with half-precision floating point numbers, effectively halving the size of the world positions buffers. Using the same assumptions made for equation \ref{rough_bounce_size_estimation}, we would have 7.5GB instead of 15GB.
+Halving precision, beside a memory footprint reduction, comes with a reduction of actual precision and potential noticeable rounding errors; but since these numbers will mostly be directly used for visualization purposes with very little preprocessing, precision errors should not negatively impact the user experience.
+Considering now the paths lengths buffer, in most reasonable cases, 1 byte per path would suffice: 255 bounces are more than enough for most cases. Examining equation \ref{rough_lenghts_size_estimation}, after the reduction from 4 bytes to 1 that buffer occupies approximately 128MB.
 
 \subsection{\texttt{Gatherer} class}
 All data gathering is managed by a header-only library that exposes one single class called \texttt{Gatherer}. To correctly gather data from a path tracer the user must initialize an instance of \texttt{Gatherer} at any point before the main loop and then call its methods where appropriate while tracing paths. Signatures of the constructor and the methods of \texttt{Gatherer} is presented in Listing \ref{gatherer_signatures}.
