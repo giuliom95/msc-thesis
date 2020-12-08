@@ -39,9 +39,25 @@ Considering now the paths lengths buffer, in most reasonable cases, 1 byte per p
 
 To complete the spatial representation of the paths, an origin point, which is semantically not a bounce, was needed. For the sake of simplicity, an additional fake bounce lying on the render camera eye was added to each path. Due to its wasteful nature --- it adds 6 bytes per path which would accumulate to $512\times 512\times 512\times 6\approx 750MB$ in the case of figure \ref{hall_render} ---, this solution was hastily set aside; in the final version of the tool, the origin point of the paths is not stored in the dataset all together. The camera eye point that comes with the scene description --- see subsection \ref{scene_format} --- is implicitly considered the origin of all paths.
 
-To fuel some components of the visualization client that have been developed over time, two other buffers are built by \texttt{gatherer}. One contains the camera samples and the other the radiance carried by each path. A camera sample is the correct position of a path on the virtual image sensor; in the tool each has a couple of integers indicating which pixel the sample belongs to and a couple of floating points numbers $\in [0, 1]$ representing the position of the sample relative to the pixel, where $(0,0)$ is the upper left corner of the pixel and $(1,1)$ is the lower right one. The radiance of each path is just stored as a triplet of floats indicating the radiance carried by a path for the red, green and blue color components.
+To fuel some components of the visualization client that have been developed over time, two other buffers are built by \texttt{gatherer}. One contains the camera samples and the other the radiance carried by each path. A camera sample is the correct position of a path on the virtual image sensor. The radiance of each path is just stored as a triplet of floats indicating the radiance carried by a path for the red, green and blue color components.
 
-Diving into implementation details, four binary data buffers have to be stored on disk. They could all be cramped into a single file but to make the loading easier, it has been decided to store each buffer in its own separate file. This means that a full dataset has to be contained into a folder rather than a file. This folder, usually --- but not necessarily --- called \texttt{renderdata}
+Focusing on implementation details it is clear that four binary data buffers have to be stored on disk. They could all be cramped into a single file but to make the loading code simpler, it has been decided to store each buffer in its own separate file.
+This means that a full dataset has to be contained into a folder rather than a file. The folder, usually, but not necessarily, called \texttt{renderdata} contains two subfolders, \texttt{bounces} and \texttt{paths}.
+This was made to logically separate buffers that contains data proper to entire paths --- like the lengths and the radiances --- to the ones relative to bounces --- the bounces positions. It may seem a little overzealous but it was made to support an easy and organized implementation of new buffers.
+
+At the end of the day, there are 4 binary files and each contain:
+\begin{description}
+	\item[\texttt{bounces/positions.bin}] The world positions of all bounces of each path, stored as triplets of \texttt{half}.
+	\item[\texttt{paths/lengths.bin}] The number of bounces of each path --- almost always called \textit{path length} in the code ---, each stored as a single \texttt{uint8\_t}.
+	\item[\texttt{paths/radiance.bin}] The radiance carried by each path, stored as triplets of \texttt{half}.
+	\item[\texttt{paths/camerasamples.bin}] The sample position on the film plane of each path. Each sample is stored in a \texttt{CameraSample} data structure\footnote{See listing \ref{gatherer_datastructures} for the actual C++ definition.}, which contains:
+	\begin{itemize}
+		\item A couple of \texttt{uint16\_t} indicating which pixel of the render image the sample belongs to.
+		\item A couple of \texttt{half} $\in [0, 1]$ representing the position of the sample relative to the pixel, where $(0,0)$ is the upper left corner of the pixel and $(1,1)$ is the lower right one.
+	\end{itemize} 
+\end{description}
+
+%TODO: maybe add an explanation on how is easy to understand which data is relative to which path?
 
 \subsection{\texttt{Gatherer} class}
 All data gathering is managed by a header-only library that exposes one single class called \texttt{Gatherer}. To correctly gather data from a path tracer the user must initialize an instance of \texttt{Gatherer} at any point before the main loop and then call its methods where appropriate while tracing paths. Signatures of the constructor and the methods of \texttt{Gatherer} is presented in Listing \ref{gatherer_signatures}.
@@ -50,7 +66,7 @@ When all the computations on a path are done and the radiance carried by it is k
 
 As hinted by the \texttt{nthreads} and \texttt{tid} arguments of \texttt{Gatherer} methods, the class has been designed to be able to gather data from path tracers that evaluate paths on multiple threads parallelly. This extra effort has been made to not force users to use only single-threaded path tracers. It has to be though noted that the \texttt{Gatherer} class assumes each path is entirely resolved on just one thread: splitting the computations of a single path on multiple threads is not currently supported.
 
-Datasets gathered from the rendering of high quality scenes can get big fast. To avoid any memory saturation problems and to leave as many resources as possible to the path tracing computations, \texttt{Gatherer} allocates a fixed amount of memory per thread and will use only that; it will store data on disk when any of these memory chunks are about to fill completely. In order to write to disk without introducing any software barrier in the multi thread code, each thread writes on a set of files that are written only it. The destructor of \texttt{Gatherer} takes care of stitching all these file sets into one, being extra careful to keep the indices consistent. This is sadly a fully disk bound operation and it may take a while, especially on rather big dataset.
+Datasets gathered from the rendering of high quality scenes can get big fast. To avoid any memory saturation problems and to leave as many resources as possible to the path tracing computations, \texttt{Gatherer} allocates a fixed amount of memory per thread and will use only that; it will store data on disk when any of these memory chunks are about to fill completely. In order to write to disk without introducing any software barrier in the multi thread code, each thread writes on a set of files that are written only it. The destructor of \texttt{Gatherer} takes care of stitching all these file sets into one, being extra careful to keep the indices consistent. This is sadly a fully disk-bound operation and it may take a while, especially on rather big dataset.
 
 
 \begin{Listing}
