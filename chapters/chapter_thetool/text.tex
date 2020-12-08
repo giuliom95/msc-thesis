@@ -35,7 +35,7 @@ This new buffer needs to contain integers and, considering that the standard C++
 Now this is not an unmanageable amount of data, but since the tool has to be usable on consumer grade machines, reducing those number has been one of the main priorities during the early stages of development. The most effective change that has been made is to simply use smaller primitive data types. 
 Single precision floats had been almost immediately replaced with half-precision floating point numbers, effectively halving the size of the world positions buffers. Using the same assumptions made for equation \ref{rough_bounce_size_estimation}, we would have 7.5GB instead of 15GB.
 Halving precision, beside a memory footprint reduction, comes with a reduction of actual precision and potential noticeable rounding errors; but since these numbers will mostly be directly used for visualization purposes with very little preprocessing, precision errors should not negatively impact the user experience.
-Considering now the paths lengths buffer, in most reasonable cases, 1 byte per path would suffice: 255 bounces are more than enough for most cases. Examining equation \ref{rough_lenghts_size_estimation}, after the reduction from 4 bytes to 1 that buffer occupies approximately 128MB.
+Considering now the paths lengths buffer, in most reasonable cases, 1 byte per path would suffice: 255 bounces are more than enough for most cases. Examining equation \ref{rough_lenghts_size_estimation}, after the reduction from 4 bytes to 1 that buffer occupies approximately 128MB. Similar reasoning has been applied to all other buffers: every floating point number is half precision and every integer is made as small as reasonable.
 
 To complete the spatial representation of the paths, an origin point, which is semantically not a bounce, was needed. For the sake of simplicity, an additional fake bounce lying on the render camera eye was added to each path. Due to its wasteful nature --- it adds 6 bytes per path which would accumulate to $512\times 512\times 512\times 6\approx 750MB$ in the case of figure \ref{hall_render} ---, this solution was hastily set aside; in the final version of the tool, the origin point of the paths is not stored in the dataset all together. The camera eye point that comes with the scene description --- see subsection \ref{scene_format} --- is implicitly considered the origin of all paths.
 
@@ -117,6 +117,24 @@ public:
 %\end{lstlisting}
 
 \section{Visualization client}
+
+\subsection{Path filters}
+\begin{figure}
+	\centering
+	\includegraphics[height=8cm]{chapters/chapter_thetool/clutter_early.pdf}
+	\caption{Visual clutter in an early render of all the paths used to path trace a $64 \times 64$, 1 spp image of the Cornell Box scene. The actual scene is not rendered to improve readability.}
+	\label{visual_clutter}
+\end{figure}
+Visualizing all paths at once is both useless and impossible in most cases. Useless due to visual clutter --- see figure \ref{visual_clutter} --- and impossible because most consumer grade GPUs cannot render several gigabytes of paths at once and keep an interactive frame rate.
+User can filter paths so they can focus only on the scene portions they are interested in. Two filters types are provided: the \textit{sphere filter} and the \textit{window filter}. The former is a sphere that has to be placed on a scene surface and selects the paths bouncing inside its radius, the latter is a rectangular window that selects the paths passing through it.
+
+An unlimited number and combination of filters of any kind can be used together. Considering all paths as a mathematical set of distinct paths $\mathcal{S}$, a filter $F$ creates a subset $F(\mathcal{S}) \subseteq \mathcal{S}$, and combining the filters $F_1, F_2, ..., F_n$ gives the intersection of their relative subsets $F_1(\mathcal{S}) \cap F_2(\mathcal{S}) \cap ... \cap F_n(\mathcal{S}) \subseteq \mathcal{S}$. Due to this strong affinity to mathematical sets, the initial code handling the filters' combination was mostly based on the \texttt{std::set<T>} data structure of C++ standard library. It was put apart when it turned out to be significantly slower than just storing everything into \texttt{std::vector<T>} structures and performing set intersections with the \texttt{std::set\_intersection} function from the \texttt{<algorithm>} STL library.
+
+\subsubsection{Sphere filter}
+
+
+
+\subsubsection{Window filter}
 
 \subsection{Bounce density heatmap}
 It might be extended by letting users draw transfer maps over a histogram.
