@@ -172,13 +172,26 @@ Users can add, modify and delete filters from the “Filters” floating panel. 
 Filters currently present in the scene will appear right below these buttons. Each filter has an entry and all of these will have a delete button --- marked with a minus “-” sign ---, a “Hide”/“Show” button to toggle the filter visibility in the viewport, and a label with the filter name. Then, according to their filter type, there will be sliders controlling miscellaneous attributes.
 
 \subsubsection{Sphere filter}
-
 This was the first filter added. It has a spherical shape and simply selects all the paths having at least one bounce inside its volume. Users can place a sphere filter on clicking on any scene surface on the viewport after having clicked the “Add Sphere” button at the top of the “Filters” panel. Once a sphere filter has been added, its radius can be controlled by the slider in its slot on the panel. The default radius is one tenth of the scene largest dimension. One possible future improvement would be giving the possibility to translate the sphere after it has been initially created; might this be achieved through 3d gizmos or just by dragging, every step in that direction should help the usability.
 
 The actual path filtering is plainly done by computing the squared distance between each bounce of each path and the sphere center. For each bounce with a computed distance less than the sphere radius, its entire path gets flagged as selected. This allows for a path-wise early termination: if a path has been flagged, it is useless to check the remaining bounces of the same path. Early termination or not, this computation is rather heavy since a render dataset rarely goes under the one hundred million bounces mark. To mitigate the otherwise lengthy waiting times, the computation is done on multiple threads; The set of paths that has to be filtered is divided in $n$ subsets $S_{1...n}$ of roughly the same cardinality, where $n$ is the number of maximum thread concurrency available on the machine. Each subset is coupled with a \texttt{std::vector<unsigned>} that has to hold the indexes of the paths of the subset that satisfy the filter; to avoid memory allocations, these vectors reserve $|S_{1...n}|$ slots each before any computation. Then, $n$ threads start to apply the filter to their assigned subset. Once all of them are done, the content of the vectors --- which are the indexes of the selected paths by each thread --- are moved into \texttt{selectedpaths}, the STL vector keeping the index of all selected paths.
 
-\subsubsection{Window filter}
+On the viewport the spheres are rendered without passing any vertex buffer to the GPU: first, using hard-coded coordinates and the GLSL \texttt{gl\_VertexID} built-in variable, a cube of side 2 centered on the origin is generated on the vertex shader; then through tessellation new vertices are generated --- every patch level has been set to 3 --- and then displaced on the surface of a unit sphere. Finally scaled and transformed at the end of the tessellation evaluation shader, the resulting triangles are ready to rasterize.
 
+\subsubsection{Window filter}
+The window filter is a rectangle embedded in 3d space that selects all the paths passing through it. After clicking on “Add Window” button, user can spawn a window filter by clicking on a surface; a window facing the camera with its central point lying on the clicked surface will be created. The filter can then be translated, rotated and scaled through the many sliders available in the filter slot on the “Filters” panel. The current interface is rather difficult to use and many things can be done to improve it, such as 3d gizmos, as already suggested for the sphere filter.
+
+The filtering is performed by iterating over the paths and for each test if any of its rays intersect the window. Even this filter supports the same kind of path-wise early termination presented for the sphere filter. To perform the ray-window intersection test, a slightly modified version of the M\"oller-Trumbore algorithm \cite{moller1997fast} has been employed: each ray, instead of being tested  against the two co-planar triangles that make up the window, is actually tested against a single large triangle encompassing the window, like shown in figure \ref{encompassing_triangle}; then, rays intersecting the triangle on points with any of the barycentric coordinates relative to the hypotenuse's vertices greater than $0.5$ are discarded.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\draw[pattern=crosshatch dots] (0,0) rectangle (1.5,1);
+		\draw (0,0) -- (0,-1) -- (3,1) -- (1.5,1);
+	\end{tikzpicture}
+
+	\caption{The triangle encompassing a window filter (dotted). It is just a right triangle of which right angle lies on a window vertex and of which catheti are as long as twice the window sides.}
+	\label{encompassing_triangle}
+\end{figure}	
 
 
 \subsection{Bounce density heatmap}
