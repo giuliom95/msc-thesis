@@ -125,19 +125,73 @@ public:
 	\caption{Visual clutter in an early render of all the paths used to path trace a $64 \times 64$, 1 spp image of the Cornell Box scene. The actual scene is not rendered to improve readability.}
 	\label{visual_clutter}
 \end{figure}
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.49\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filterscombination1.pdf}
+		\caption{In the beginning, one sphere is placed on the back wall.}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filterscombination2.pdf}
+		\caption{Then a window is placed to select only the paths that go from the camera to the sphere on the back wall.}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filterscombination3.pdf}
+		\caption{Finally, a second sphere is placed on top of the short box to select only a single path.}
+	\end{subfigure}
+
+	\caption{Example of using more path filters together in a small dataset generated on the Cornell Box scene of $64 \times 64$ pixels and 32 spp.}
+	\label{filterstack}
+\end{figure}
+
 Visualizing all paths at once is both useless and impossible in most cases. Useless due to visual clutter --- see figure \ref{visual_clutter} --- and impossible because most consumer grade GPUs cannot render several gigabytes of paths at once and keep an interactive frame rate.
 User can filter paths so they can focus only on the scene portions they are interested in. Two filters types are provided: the \textit{sphere filter} and the \textit{window filter}. The former is a sphere that has to be placed on a scene surface and selects the paths bouncing inside its radius, the latter is a rectangular window that selects the paths passing through it.
 
-An unlimited number and combination of filters of any kind can be used together. Considering all paths as a mathematical set of distinct paths $\mathcal{S}$, a filter $F$ creates a subset $F(\mathcal{S}) \subseteq \mathcal{S}$, and combining the filters $F_1, F_2, ..., F_n$ gives the intersection of their relative subsets $F_1(\mathcal{S}) \cap F_2(\mathcal{S}) \cap ... \cap F_n(\mathcal{S}) \subseteq \mathcal{S}$. Due to this strong affinity to mathematical sets, the initial code handling the filters' combination was mostly based on the \texttt{std::set<T>} data structure of C++ standard library. It was put apart when it turned out to be significantly slower than just storing everything into \texttt{std::vector<T>} structures and performing set intersections with the \texttt{std::set\_intersection} function from the \texttt{<algorithm>} STL library.
+As shown in figure \ref{filterstack}, combination of filters of both kinds can be used together. Considering all paths as a mathematical set of distinct paths $\mathcal{S}$, a filter $F$ creates a subset $F(\mathcal{S}) \subseteq \mathcal{S}$, and combining the filters $F_1, F_2, ..., F_n$ gives the intersection of their relative subsets:
+\begin{equation}
+	\label{filters_union}
+	F_1(\mathcal{S}) \cap F_2(\mathcal{S}) \cap ... \cap F_n(\mathcal{S}) \subseteq \mathcal{S}
+\end{equation}
+Due to this strong affinity to mathematical sets, the initial code handling the filters' combination was mostly based on the \texttt{std::set<T>} data structure of C++ standard library. It was put apart when it turned out to be significantly slower than just storing everything into \texttt{std::vector<T>} structures and performing set intersections with the \texttt{std::set\_intersection} function from the \texttt{<algorithm>} STL library. To further speed the filtering up, the filters are computed in order so they all need to just test the paths selected by the previous filter; in the implementation, equation \ref{filters_union} is practically evaluated as if it was:
+\begin{equation}
+	F_n( ... F_2(F_1(\mathcal{S}))) \subseteq \mathcal{S}
+\end{equation}
+The tool uses a \texttt{std::vector<unsigned>} called \texttt{selectedpaths} to keep the indexes of the currently selected paths. Each filtering step is practically run over the \texttt{selectedpaths} output by the last stage. Before any filter, \texttt{selectedpaths} is filled with all path indexes. Forcing this into mathematical notation gives that the $i$th filter step out of $m$ filters is:
+\begin{equation}
+	\texttt{selectedpaths}_i = F_i(\texttt{selectedpaths}_{i-1}),\ i\in[1, m]
+\end{equation}
+where $\texttt{selectedpaths}_i$ is the \texttt{selectedpaths} vector after filtering through the $i$th filter and $\texttt{selectedpaths}_0 = \mathcal{S}$.
+
+Users can add, modify and delete filters from the “Filters” floating panel. On the top of it there are three push buttons:
+\begin{description}
+	\item[“Update paths”] Since path filtering is an operation that takes a noticeable time to complete, the user must explicitly express the will to apply the current filter set to the paths.
+	\item[“Add sphere”] After the user clicks this, they have to click on a surface of the scene. A filter sphere will appear on the clicked surface.
+	\item[“Add window”] Same as the previous button but it adds a window filter on the clicked scene surface instead.
+\end{description}
+Filters currently present in the scene will appear right below these buttons. Each filter has an entry and all of these will have a delete button --- marked with a minus “-” sign ---, a “Hide”/“Show” button to toggle the filter visibility in the viewport, and a label with the filter name. Then, according to their filter type, there will be sliders controlling miscellaneous attributes.
 
 \subsubsection{Sphere filter}
 
+This was the first filter added. It has a spherical shape and simply selects all the paths having at least one bounce inside its volume. Users can place a sphere filter on clicking on any scene surface on the viewport after having clicked the “Add Sphere” button at the top of the “Filters” panel. Once a sphere filter has been added, its radius can be controlled by the slider in its slot on the panel. The default radius is one tenth of the scene largest dimension. One possible future improvement would be giving the possibility to translate the sphere after it has been initially created; might this be achieved through 3d gizmos or just by dragging, every step in that direction should help the usability.
 
+The actual path filtering is plainly done by computing the squared distance between each bounce of each path and the sphere center. For each bounce with a computed distance less than the sphere radius, its entire path gets flagged as selected. This allows for a path-wise early termination: if a path has been flagged, it is useless to check the remaining bounces of the same path. Early termination or not, this computation is rather heavy since a render dataset rarely goes under the one hundred million bounces mark. To mitigate the otherwise lengthy waiting times, the computation is done on multiple threads; The set of paths that has to be filtered is divided in $n$ subsets $S_{1...n}$ of roughly the same cardinality, where $n$ is the number of maximum thread concurrency available on the machine. Each subset is coupled with a \texttt{std::vector<unsigned>} that has to hold the indexes of the paths of the subset that satisfy the filter; to avoid memory allocations, these vectors reserve $|S_{1...n}|$ slots each before any computation. Then, $n$ threads start to apply the filter to their assigned subset. Once all of them are done, the content of the vectors --- which are the indexes of the selected paths by each thread --- are moved into \texttt{selectedpaths}, the STL vector keeping the index of all selected paths.
 
 \subsubsection{Window filter}
 
+
+
 \subsection{Bounce density heatmap}
 It might be extended by letting users draw transfer maps over a histogram.
+
+
+\subsection{Viewport rendering}
+\begin{itemize}
+	\item Scene rendering
+	\item Paths rendering
+	\item Transparency 
+	\item Camera control
+\end{itemize}
 
 \subsection{Scene format}
 \label{scene_format}
