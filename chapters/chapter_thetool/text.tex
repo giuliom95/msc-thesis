@@ -13,7 +13,7 @@ Once the rendering is done and the data is collected, the visualization client c
 
 \subsection{The data to gather}
 Until now, it has been said that the gatherer has to be able to store “the paths with some useful data”, but how does one store a path and what is useful data have not been defined yet. In the beginning, the focus was on just visualizing paths in an interactive scene rendering so that the user could see how paths interact with the scene. To achieve that it was clear the actual geometry of all paths had to be stored. This meant storing for each path a camera sample and all of its bounces.
-Several ways of storing path bounces had been considered, such as storing each bounce as a direction and a distance, but the most naïve solution has been opted: each bounce is stored as a 3-dimensional point in world space.
+Several ways of storing path bounces had been considered, such as storing each bounce as a direction and a distance, but the most na\"ive solution has been opted: each bounce is stored as a 3-dimensional point in world space.
 
 This immediately raised some concerns about how much memory would be required to store all these points: let us calculate how many bytes it would take to just store the bounces of all paths needed to produce image \ref{hall_render}. It is 512 pixels wide and 512 pixels tall, it has been rendered with 512 samples per pixel --- spp --- each with a depth of maximum 10 --- this means that each of the 512 paths shoot every pixel bounced in the scene at most 10 times. Storing the points as a triplet of single precision float numbers --- 4 bytes, the C++ built-in \texttt{float} type ---  we would have:
 \begin{equation}
@@ -119,6 +119,7 @@ public:
 \section{Visualization client}
 
 \subsection{Path filters}
+\label{path_filters}
 \begin{figure}
 	\centering
 	\includegraphics[height=8cm]{chapters/chapter_thetool/clutter_early.pdf}
@@ -198,13 +199,100 @@ The filtering is performed by iterating over the paths and for each test if any 
 It might be extended by letting users draw transfer maps over a histogram.
 
 
-\subsection{Viewport rendering}
+\subsection{Viewport}
+The 3-dimensional viewport is the central component of the visualization tool. It takes care of interactively rendering three entities: the scene geometry, the paths' rays and the filters shapes. Each presented their own challenges that culminated in the implementation of their cross interactions. Having these many elements to show brought the necessity of employing multi-pass rendering, compositing techniques throughout the render pipeline and consequent multiple frame buffers. The pipeline will now be explained analyzing the steps made to render figure \ref{viewport_render}.
+
+\begin{figure}
+	\centering
+	\includegraphics[height=8cm]{chapters/chapter_thetool/viewport_render.pdf}
+	\caption{An example of a final frame rendered by the viewport.}
+	\label{viewport_render}
+\end{figure}
+
+The scene is rendered in two passes, one for the opaque geometries and the other for translucent ones. The opaque geometries pass is done first and outputs a \textit{beauty} texture, the \textit{world positions} texture, the \textit{geometry ID} texture, and a \textit{depth} texture. The beauty texture (fig. \ref{beauty_scenepass1}) is a color render of the scene lighted by a point light placed on the camera. Every surface is flat shaded with a plain Lambertian model \cite{lambert1760photometria}. As detailed in section \ref{scene_format}, the scene format does not store the vertex normals, instead the surface normals are computed on the fragment shader using the \texttt{dFdx} and \texttt{dFdy} GLSL functions on the world position of the fragments. As their names suggest, the world position, geometry ID and depth textures (fig. \ref{worldpos_scenepass1}, \ref{worldposa_scenepass1} and \ref{depth_scenepass1}) respectively store the world position, geometry ID and the depth --- which is distance from the camera $\in[0,1]$, where 0 is on the near clipping plane and 1 is on the far clipping plane --- of each fragment. Having depth data might seem redundant when the world positions are available, but to take advantage of the built-in depth testing functionalities of OpenGL it has been preferred to keep both textures. The world positions and geometry IDs are used to get information on the points clicked by the user; these are then used for example, when placing filters or selecting scene objects to hide.
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/beauty_scenepass1}
+		\caption{Beauty}
+		\label{beauty_scenepass1}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/worldpos_scenepass1}
+		\caption{World positions}
+		\label{worldpos_scenepass1}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/worldposa_scenepass1}
+		\caption{Geometry ID}
+		\label{worldposa_scenepass1}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/depth_scenepass1}
+		\caption{Depth}
+		\label{depth_scenepass1}
+	\end{subfigure}
+
+	\caption{Textures written by the opaque scene pass. The white and black levels of (b), (c) and (d) have been altered to improve readability.}
+	\label{opaque_pass}
+\end{figure}
+
+The pass for translucent objects is practically equivalent to the previous pass, the only peculiarity is that it writes beauty and depth on new textures while the world positions and the geometries IDs are written upon the ones generated by the opaque pass. Figure \ref{translucent_pass} shows the textures after this pass.
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/beauty_scenepass2}
+		\caption{Beauty}
+		\label{beauty_scenepass2}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/worldpos_scenepass2}
+		\caption{World positions}
+		\label{worldpos_scenepass2}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/worldposa_scenepass2}
+		\caption{Geometry ID}
+		\label{worldposa_scenepass2}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/depth_scenepass2}
+		\caption{Depth}
+		\label{depth_scenepass2}
+	\end{subfigure}
+
+	\caption{Textures written by the translucent scene pass. The white and black levels of (b), (c) and (d) have been altered to improve readability.}
+	\label{translucent_pass}
+\end{figure}
+
+\subsubsection{Camera controls}
+Users can navigate the scene using camera controls common to many commercial animation suite packages:
+\begin{description}
+	\item[Alt key + Left mouse button drag] Tumbles the camera around a focus point in front of the camera.
+	\item[Alt key + Right mouse button drag] Dollies the camera.
+	\item[Alt key + Middle mouse button drag] Tracks the camera. 
+\end{description}
+At this moment, camera controls are rather coarse and could use some polishing; for example, their sensitivity does not adapt to changes in scene size and this leads to difficulties while navigating small or big scenes. Even the clipping planes ignore the scene size and the default values often create artifacts.
+
+
+%\begin{itemize}
+%	\item Scene rendering
+%	\item Paths rendering
+%	\item Transparency 
+%	\item Camera control
+%\end{itemize}
+
+\subsection{Render image widget}
+
+
+\subsection{Double dataset handling}
 \begin{itemize}
-	\item Scene rendering
-	\item Paths rendering
-	\item Transparency 
-	\item Camera control
+	\item User can load two datasets at once and compare them.
+	\item It works by having both on memory
 \end{itemize}
+
 
 \subsection{Scene format}
 \label{scene_format}
