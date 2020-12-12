@@ -164,23 +164,23 @@ The tool uses a \texttt{std::vector<unsigned>} called \texttt{selectedpaths} to 
 \end{equation}
 where $\texttt{selectedpaths}_i$ is the \texttt{selectedpaths} vector after filtering through the $i$th filter and $\texttt{selectedpaths}_0 = \mathcal{S}$.
 
-Users can add, modify and delete filters from the “Filters” floating panel. On the top of it there are three push buttons:
+Users can add, modify and delete filters from the \textbf{“Filters”} floating panel. On the top of it there are three push buttons:
 \begin{description}
 	\item[“Update paths”] Since path filtering is an operation that takes a noticeable time to complete, the user must explicitly express the will to apply the current filter set to the paths.
 	\item[“Add sphere”] After the user clicks this, they have to click on a surface of the scene. A filter sphere will appear on the clicked surface.
 	\item[“Add window”] Same as the previous button but it adds a window filter on the clicked scene surface instead.
 \end{description}
-Filters currently present in the scene will appear right below these buttons. Each filter has an entry and all of these will have a delete button --- marked with a minus “-” sign ---, a “Hide”/“Show” button to toggle the filter visibility in the viewport, and a label with the filter name. Then, according to their filter type, there will be sliders controlling miscellaneous attributes.
+Filters currently present in the scene will appear right below these buttons. Each filter has an entry and all of these will have a delete button --- marked with a minus \textbf{“-”} sign ---, a \textbf{“Hide”}/\textbf{“Show”} button to toggle the filter visibility in the viewport, and a label with the filter name. Then, according to their filter type, there will be sliders controlling miscellaneous attributes.
 
 \subsubsection{Sphere filter}
-This was the first filter added. It has a spherical shape and simply selects all the paths having at least one bounce inside its volume. Users can place a sphere filter on clicking on any scene surface on the viewport after having clicked the “Add Sphere” button at the top of the “Filters” panel. Once a sphere filter has been added, its radius can be controlled by the slider in its slot on the panel. The default radius is one tenth of the scene largest dimension. One possible future improvement would be giving the possibility to translate the sphere after it has been initially created; might this be achieved through 3d gizmos or just by dragging, every step in that direction should help the usability.
+This was the first filter added. It has a spherical shape and simply selects all the paths having at least one bounce inside its volume. Users can place a sphere filter on clicking on any scene surface on the viewport after having clicked the \textbf{“Add Sphere”} button at the top of the \textbf{“Filters”} panel. Once a sphere filter has been added, its radius can be controlled by the slider in its slot on the panel. The default radius is one tenth of the scene's largest dimension. One possible future improvement would be giving the possibility to translate the sphere after it has been initially created; might this be achieved through 3d gizmos or just by dragging, every step in that direction should help the usability.
 
 The actual path filtering is plainly done by computing the squared distance between each bounce of each path and the sphere center. For each bounce with a computed distance less than the sphere radius, its entire path gets flagged as selected. This allows for a path-wise early termination: if a path has been flagged, it is useless to check the remaining bounces of the same path. Early termination or not, this computation is rather heavy since a render dataset rarely goes under the one hundred million bounces mark. To mitigate the otherwise lengthy waiting times, the computation is done on multiple threads; The set of paths that has to be filtered is divided in $n$ subsets $S_{1...n}$ of roughly the same cardinality, where $n$ is the number of maximum thread concurrency available on the machine. Each subset is coupled with a \texttt{std::vector<unsigned>} that has to hold the indexes of the paths of the subset that satisfy the filter; to avoid memory allocations, these vectors reserve $|S_{1...n}|$ slots each before any computation. Then, $n$ threads start to apply the filter to their assigned subset. Once all of them are done, the content of the vectors --- which are the indexes of the selected paths by each thread --- are moved into \texttt{selectedpaths}, the STL vector keeping the index of all selected paths.
 
 On the viewport the spheres are rendered without passing any vertex buffer to the GPU: first, using hard-coded coordinates and the GLSL \texttt{gl\_VertexID} built-in variable, a cube of side 2 centered on the origin is generated on the vertex shader; then through tessellation new vertices are generated --- every patch level has been set to 3 --- and then displaced on the surface of a unit sphere. Finally scaled and transformed at the end of the tessellation evaluation shader, the resulting triangles are ready to rasterize.
 
 \subsubsection{Window filter}
-The window filter is a rectangle embedded in 3d space that selects all the paths passing through it. After clicking on “Add Window” button, user can spawn a window filter by clicking on a surface; a window facing the camera with its central point lying on the clicked surface will be created. The filter can then be translated, rotated and scaled through the many sliders available in the filter slot on the “Filters” panel. The current interface is rather difficult to use and many things can be done to improve it, such as 3d gizmos, as already suggested for the sphere filter.
+The window filter is a rectangle embedded in 3d space that selects all the paths passing through it. After clicking on \textbf{“Add Window”} button, user can spawn a window filter by clicking on a surface; a window facing the camera with its central point lying on the clicked surface will be created. The filter can then be translated, rotated and scaled through the many sliders available in the filter slot on the \textbf{“Filters”} panel. The current interface is rather difficult to use and many things can be done to improve it, such as 3d gizmos, as already suggested for the sphere filter.
 
 The filtering is performed by iterating over the paths and for each test if any of its rays intersect the window. Even this filter supports the same kind of path-wise early termination presented for the sphere filter. To perform the ray-window intersection test, a slightly modified version of the M\"oller-Trumbore algorithm \cite{moller1997fast} has been employed: each ray, instead of being tested  against the two co-planar triangles that make up the window, is actually tested against a single large triangle encompassing the window, like shown in figure \ref{encompassing_triangle}; then, rays intersecting the triangle on points with any of the barycentric coordinates relative to the hypotenuse's vertices greater than $0.5$ are discarded.
 \begin{figure}
@@ -200,7 +200,7 @@ It might be extended by letting users draw transfer maps over a histogram.
 
 
 \subsection{Viewport}
-The 3-dimensional viewport is the central component of the visualization tool. It takes care of interactively rendering three entities: the scene geometry, the paths' rays and the filters shapes. Each presented their own challenges that culminated in the implementation of their cross interactions. Having these many elements to show brought the necessity of employing multi-pass rendering, compositing techniques throughout the render pipeline and consequent multiple frame buffers. The pipeline will now be explained analyzing the steps made to render figure \ref{viewport_render}.
+The 3-dimensional viewport is the central component of the visualization tool. It takes care of interactively rendering three entities: the scene geometry, the paths' rays and the filters shapes. Each presented their own challenges that culminated in the implementation of their cross interactions. Having these many elements to show brought the necessity of employing multi-pass rendering, compositing techniques throughout the render pipeline and consequent multiple frame buffers. To save resources and keep the UI snappy even when the viewport requires most GPU resources, the viewport renders only when a change of any visualization parameter or scene/dataset properties happens. For this purpose, a boolean variable called \texttt{mustrenderviewport} is used and has to be set true to require a viewport redraw. The render pipeline and the interface controls provided to the user to tweak its stages will now be explained analyzing the steps made to render figure \ref{viewport_render}.
 
 \begin{figure}
 	\centering
@@ -265,6 +265,47 @@ The pass for translucent objects is practically equivalent to the previous pass,
 
 	\caption{Textures written by the translucent scene pass. The white and black levels of (b), (c) and (d) have been altered to improve readability.}
 	\label{translucent_pass}
+\end{figure}
+
+TALK ABOUT THE SCENE VIZ OPTIONS
+
+Right after the scene passes, the paths are rendered. Every time there is a change of the set of the selected paths, the new set is loaded on the GPU. The rendering is done using the \texttt{glMultiDrawArrays} OpenGL render function with the \texttt{GL\_LINE\_STRIP} render mode. This has been proven to be visibly faster than calling \texttt{glDrawArrays} several times inside a \texttt{for} loop. Through the use of the two depth textures generated by the scene render passes (fig. \ref{depth_scenepass1} and \ref{depth_scenepass2}), the path fragments are rendered on two textures: a \textit{front} (fig. \ref{rays_front}) and a \textit{back} (fig. \ref{rays_back}) one. All the fragments that are occluded by neither opaque nor translucent scene geometry end up in the front texture, the ones occluded only by a translucent geometry fill the back texture. Since usually hundreds of thousands of paths pass through a single pixel, the OpenGL built-in alpha blending is enabled. By default, all paths are rasterized with an alpha value directly controlled by the \textbf{“Paths”} slider on the \textbf{“Paths alpha”}  section of the \textbf{“Visualization options”} panel. In that section there are also three checkboxes controlling other visual properties of the paths:
+\begin{description}
+	\item[“Render”] Toggles the rendering of the paths all together. It might be helpful in situations where the user selected too many paths and moving the viewport camera gets difficult.
+	\item[“Depth test”] Toggles the depth test during paths' rendering. It can be handy with cluttered scenes.
+	\item[“Radiance scaling”] When checked, the paths' alpha gets scaled by their transported radiance. In other words, it gives a visual method to pick the rays that carry more light energy than others. This can be useful while determining the origin of fireflies and such rendering artifacts. From the implementation point of view, this is achieved by loading to the GPU a shader storage buffer --- \texttt{sso} for short --- containing the summed radiance of the red, green and blue channels of each path; the shaders then, thanks to the \texttt{gl\_DrawID} variable --- which is available since the \texttt{glMultiDrawArrays} render function is used ---, can access the \texttt{sso} correctly and shade the paths by multiplying the radiance with the user defined path alpha.
+\end{description}
+
+Reached this point, what the viewport rendered until now is composited together.
+Starting from the opaque beauty texture (fig. \ref{beauty_scenepass1}), the \textit{back} paths are added (fig. \ref{rays_back}), then the translucent beauty texture (fig. \ref{beauty_scenepass2}) is alpha blended over with a default value of 0.7 and finally the \textit{front} paths (fig. \ref{rays_front}) are super imposed. This leads to the result shown in figure \ref{beauty+rays}. As probably already noticed by the reader, this render pipeline provides a rather simplistic way to solve the so often called “transparency problem” that breaks when there are paths that has to be rendered between two translucent objects: they will render as they were behind both objects. Due to the lesser severity of the resulting artifacts, a proper and technically more complex solution has never been even planned.
+
+To make filters appear over the paths, they are rendered last. They are first rendered as a mask (fig. \ref{filter_mask}), taking in account only the opaque depth texture (fig. \ref{depth_scenepass1}) so that filters appear occluded by opaque object scenes. The mask is then used to composite the \textit{scene + paths} with a semi-transparent dark blue of RGBA value of $(0,0,0.33,0.33)$, outputting the final frame (fig. \ref{viewport_render}).
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/rays_front}
+		\caption{\textit{Front} paths}
+		\label{rays_front}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/rays_back}
+		\caption{\textit{Back} paths}
+		\label{rays_back}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/beauty+rays}
+		\caption{Scene + paths}
+		\label{beauty+rays}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.24\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filter_mask}
+		\caption{Filter mask}
+		\label{filter_mask}
+	\end{subfigure}
+
+	\caption{Textures written by the paths pass with the composited result of the scene renders plus the paths and the filter mask texture.}
+	\label{final_passes}
 \end{figure}
 
 \subsubsection{Camera controls}
