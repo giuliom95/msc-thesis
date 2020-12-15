@@ -12,6 +12,7 @@ Once the rendering is done and the data is collected, the visualization client c
 \section{Data gatherer}
 
 \subsection{The data to gather}
+\label{datatogather}
 Until now, it has been said that the gatherer has to be able to store “the paths with some useful data”, but how does one store a path and what is useful data have not been defined yet. In the beginning, the focus was on just visualizing paths in an interactive scene rendering so that the user could see how paths interact with the scene. To achieve that it was clear the actual geometry of all paths had to be stored. This meant storing for each path a camera sample and all of its bounces.
 Several ways of storing path bounces had been considered, such as storing each bounce as a direction and a distance, but the most na\"ive solution has been opted: each bounce is stored as a 3-dimensional point in world space.
 
@@ -335,18 +336,56 @@ Users can navigate the scene using camera controls common to many commercial ani
 \end{description}
 At this moment, camera controls are rather coarse and could use some polishing; for example, their sensitivity does not adapt to changes in scene size and this leads to difficulties while navigating small or big scenes. Even the clipping planes ignore the scene size and the default values often create artifacts.
 
+\subsubsection{Axes widget}
+%TODO
 
 \subsection{Render image widget}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\textwidth]{chapters/chapter_thetool/imagewidget_full}
+	\caption{\textbf{“Render”} panel in its default state, showing an unaltered render of the \textit{Modern Hall} \cite{bitterliscenes} scene.}
+	\label{imagewidget_full}
+\end{figure}
 
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.32\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/imagewidget_paths}
+		\caption{Viewport render}
+		\label{imagewidget_paths}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.32\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/imagewidget_radiance}
+		\caption{Radiance view}
+		\label{imagewidget_radiance}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.32\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/imagewidget_bounces}
+		\caption{Bounces view}
+		\label{imagewidget_bounces}
+	\end{subfigure}
+
+	\caption{An example of the \textbf{“Final radiance”} (b) and \textbf{“Paths per pixel”} (c) views of the \textbf{“Render”} panel relative to the selected paths shown in a viewport capture (a).}
+	\label{imagewidget_options}
+\end{figure}
+
+
+The render image is a vital part of a dataset, after all it is the end result of a path tracer. A panel, simply called \textbf{“Render”}, is dedicated to showing the render image and some useful views related to it. By default, as soon as a dataset is loaded from disk, a pristine render image built upon the radiance and camera samples buffers of the dataset\footnote{Refer to section \ref{datatogather} for information about the buffers of the dataset} (fig. \ref{imagewidget_full}). Due to its nature, this image has a high dynamic range and it has a linear color space, so a tone mapping operation has been applied on it through a fragment shader. The tone mapping described on the OpenEXR documentation\footnote{\url{https://www.openexr.com/using.html}} is used here and its \textit{exposure} parameter has been directly linked to the \textbf{“Exposure”} slider; users can tweak it to explore the dynamic range of the render.
+
+When some path filters have been placed into the scene, users can access the \textbf{“Final radiance”} and the \textbf{“Paths per pixel”} views using the \textbf{“Display mode”} drop-down list. They both show information about the pixels affected by the currently selected paths and the pixels not touched by the path selection are rendered of the color specified by the user through the \textbf{“Background color”} color picker. The \textbf{“Final radiance”} view (fig. \ref{imagewidget_radiance}) simply displays the pixels of the final image; it was thought of actually displaying the radiance carried only by the selected paths, but as per today it is still to implement. The \textbf{“Paths per pixel”} view (fig. \ref{imagewidget_bounces}) instead shows for each pixel the number of paths originated on it, fitted to $[0,1]$ using the maximum and minimum as extremes and then color mapped with the \textit{coolwarm} scheme\footnote{The \textit{coolwarm} scheme is a $\mathbb{R} \to \mathbb{R}^3$ mapping that maps a scalar $\in[0,1]$ to an RGB color. $0$ gets mapped to $(0.230, 0.299, 0.754)^\intercal$, $0.5$ to $(0.865, 0.865, 0.865)^\intercal$, $1$ to $(0.706, 0.016, 0.150)^\intercal$, and all scalars in between are linearly interpolated.}. In other words, it shows the density of paths for each pixel.
+
+The only controls the user has on this widget are the already mentioned \textbf{“Exposure”} slider and the \textbf{“Background color”} color picker. As a future development, panning and zooming controls for the image plus some other controls on the tone mapping have been proposed.
 
 \subsection{Bounce density heatmap}
 \label{heatmap}
+%TODO
 It might be extended by letting users draw transfer maps over a histogram.
 
 
 
 \subsection{Double dataset handling}
+%TODO
 \begin{itemize}
 	\item User can load two datasets at once and compare them.
 	\item It works by having both on memory
