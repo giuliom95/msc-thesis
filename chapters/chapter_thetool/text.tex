@@ -337,7 +337,8 @@ Users can navigate the scene using camera controls common to many commercial ani
 At this moment, camera controls are rather coarse and could use some polishing; for example, their sensitivity does not adapt to changes in scene size and this leads to difficulties while navigating small or big scenes. Even the clipping planes ignore the scene size and the default values often create artifacts.
 
 \subsubsection{Axes widget}
-%TODO
+
+Imitating most 3d applications, a small floating panel showing the current camera orientation by a render of the three coordinate axes is provided. The x-axis is colored in red, the y-axis in green, and the z-axis in blue, following the well established convention in computer graphics. The rendering of it is done without any vertex buffer since the vertices are positioned by the vertex shader using the \texttt{gl\_VertexID} built-in GLSL variable and some bit-wise operations. 
 
 \subsection{Render image widget}
 
