@@ -455,11 +455,7 @@ To speed up the computation the obvious step of making it multi-threaded has bee
 
 
 \subsection{Double dataset handling}
-%TODO
-\begin{itemize}
-	\item User can load two datasets at once and compare them.
-	\item It works by having both on memory
-\end{itemize}
+In the middle of development it became progressively clearer that having a way to compare two different datasets with ease would have been a crucial feature to perform debugging on datasets. To satisfy this necessity, the possibility to load two datasets at once was implemented. From the user perspective, when a second dataset is loaded, nothing changes but for the appearance of the \textbf{“Dataset switcher”} panel: every other UI component stays the same and it has the same functionalities as before but now the user can either click on the \textbf{“Switch dataset”} button or press the \textbf{X} keyboard key to switch back and forth between the two datasets. In the current status of things, when a switch happens all visualization changes but the parameters, settings, and filters chosen by the user stay the same. Extra care has been taken to make switching as fast as an ordinary frame render to allow a delay free experience of this rather critical interaction. This came to the expense of memory: both datasets have to be loaded on primary memory at all times and the same goes with the currently selected paths on the GPU memory.
 
 
 \subsection{Scene format}
