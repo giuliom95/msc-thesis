@@ -9,4 +9,21 @@ This project has been based upon the idea of giving the user the power to visual
 \section{Technology}
 \label{technology}
 
-C++ does not have a built-in \texttt{half} type so an IEEE 754 compatible header only library\footnote{\url{http://half.sourceforge.net/}} has been used thoroughly the written software.
+The data gatherer has been developed as a header-only C++17\footnote{C++17 is the informal name of the ISO/IEC 14882:2017 standard. \url{https://www.iso.org/standard/68564.html}} library. The choice was motivated by the belief --- not backed by any data --- that most path tracers, included the ones written by students, are written in C++. In hindsight, probably writing it in pure C would have made it potentially compatible with more path tracers; after all it uses very few features of C++. 
+
+Deciding the technologies to use for the visualization client took more careful thinking, since it was clear it would be the biggest software piece in the context of this project. The final combination consists in:
+\begin{description}
+	\item[C++] Due to the available expertise, the other plausible languages were Python and --- for a very brief moment --- Julia, but they were discarded due to the necessity of managing memory and threads directly. C has been considered too, but STL and OOP made the scale tip over C++. As for the data gatherer, C++17 is used.
+	\item[“Raw” OpenGL] Rendering hundreds of thousands paths in an interactive and fully customizable fashion was perceived since the beginning as no easy task and it made clear the necessity to be able to control and program every possible stage of the rendering pipeline. Due to this, visualization frameworks such as VTK \cite{vtk2006} had been ruled out immediately in favor of just GLEW and GLFW3 to provide an OpenGL 4.6 Core Profile context.
+	\item[Dear ImGui] Since all rendering customization needs came from the interactive 3d rendering of paths and scenes, using just OpenGL to build a GUI from scratch would have been insane and so a GUI framework had to be chosen. The final candidates were Qt5 and Dear ImGui\footnote{\url{https://github.com/ocornut/imgui}} but since ImGui was not completely familiar to the author, it has been chosen due to educational purposes.
+	\item[Boost Log and Filesystem] It seemed like a good idea to have a complete logger and a filesystem library with a STL-like style and it led to the adoption of the Boost Log\footnote{\url{https://www.boost.org/doc/libs/1_75_0/libs/log/doc/html/index.html}} and Boost Filesystem\footnote{\url{https://www.boost.org/doc/libs/1_39_0/libs/filesystem/doc/index.htm}} libraries. Since it is not a crucial dependency, it might be removed in a future development.
+\end{description}
+
+Both the gatherer and the visualization client use a header-only math library called \textit{math.hpp}\footnote{\url{https://github.com/giuliom95/math}} to handle vector and matrix types and operations. It includes the \textit{half} library\footnote{\url{http://half.sourceforge.net/}} which is an implementation of the 16 bits floating point number representation, commonly called half precision float or just \texttt{half}, as described by the IEEE 754 standard\footnote{\url{https://ieeexplore.ieee.org/document/8766229}}.
+
+\section{Background}
+
+To fully comprehend the topics and challenges presented in this work a background is needed.
+
+\subsection{The rendering equation}
+\textit{Photorealistic rendering} is the process that given a mathematical description of a 3-dimensional scene outputs an as life-like as possible image, know as \textit{render}. The process simulates how light travels from light sources to a --- abstract --- camera sensor while interacting with the scene.
