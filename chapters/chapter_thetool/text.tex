@@ -457,6 +457,9 @@ As already mentioned before and as will be seen in detail in section \ref{scene_
 
 At the end of this operation, the output is equivalent to the one visualized in figure \ref{uvmap_gen}: a 2-dimensional UV coordinate spanning across several texture squares is assigned to each scene vertex. These coordinates are appended to the vertex buffers on the GPU used for scene rendering.
 
+During development, it has been briefly considered assigning to every triangle its own texture. Both solutions would have brought us similar results, but the road to reach those results would have been completely different: while solving the knapsack problem was a matter of coming up with an algorithm, storing a texture per triangle while maintaining useful properties such as a constant ratio between texel size and world space units, would have been a matter of cleverly bending OpenGL features and limitations. We opted the first path due to personal preferences.
+%But, since we would have stored these textures in a texture array and the OpenGL 4.5 standard specifies that the lower bound of the maximum number of textures an array can contain are 2048, we would have had to split everything across several arrays for bigger scenes. Of course that is a lower bound and most GPUs have that limit set higher, but we decided to follow the standard anyway. Furthermore, without additional code, having a texture per triangle would have made the ratio between texel size and world units greatly variate across triangles; this would not be inherently a problem 
+
 \begin{figure}
 	\centering
 	\begin{subfigure}[t]{0.24\linewidth}
