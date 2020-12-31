@@ -1,7 +1,5 @@
 \chapter{The tool}
 
-\section{General description}
-\label{tool_general_description}
 The tool has two components: a \textit{data gatherer} and a \textit{visualization client}.
 
 The data gatherer is a C++ header-only class of which methods have to be called within the main loop of any unidirectional path tracer. It stores to disk data generated --- and usually discarded --- by the path tracer during rendering. For each path shoot by the renderer the tool stores its transported radiance, its camera sample, and the world positions of its bounces. 
@@ -32,7 +30,7 @@ Both the gatherer and the visualization client use a header-only math library ca
 Until now, it has been said that the gatherer has to be able to store “the paths with some useful data”, but how does one store a path and what is useful data have not been defined yet. In the beginning, the focus was on just visualizing paths in an interactive scene rendering so that the user could see how paths interact with the scene. To achieve that it was clear the actual geometry of all paths had to be stored. This meant storing for each path a camera sample and all of its bounces.
 Several ways of storing path bounces had been considered, such as storing each bounce as a direction and a distance, but the most na\"ive solution has been opted: each bounce is stored as a 3-dimensional point in world space.
 
-This immediately raised some concerns about how much memory would be required to store all these points: let us calculate how many bytes it would take to just store the bounces of all paths needed to produce image \ref{hall_render}. It is 512 pixels wide and 512 pixels tall, it has been rendered with 512 samples per pixel --- spp --- each with a depth of maximum 10 --- this means that each of the 512 paths shoot every pixel bounced in the scene at most 10 times. Storing the points as a triplet of single precision float numbers --- 4 bytes, the C++ built-in \texttt{float} type ---  we would have:
+This immediately raised some concerns about how much memory would be required to store all these points: let us calculate how many bytes it would take to just store the bounces of all paths needed to produce image \ref{hall_render}. It is 512 pixels wide and 512 pixels tall, it has been rendered with 512 samples per pixel --- spp --- each with a depth of maximum 10 --- this means that each of the 512 paths shot every pixel bounced in the scene at most 10 times. Storing the points as a triplet of single precision float numbers --- 4 bytes, the C++ built-in \texttt{float} type ---  we would have:
 \begin{equation}
 	\label{rough_bounce_size_estimation}
 	(512 \times 512) pixels \times 512 spp \times 10 bounces \times 3 dimensions \times 4 bytes \approx 15GB
@@ -152,8 +150,15 @@ public:
 		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filterscombination3.pdf}
 		\caption{Finally, a second sphere is placed on top of the short box to select only a single path.}
 	\end{subfigure}
+	\hspace{4em}
+	\begin{subfigure}[t]{0.29\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/filterspane}
+		\caption{\textbf{“Filters”} floating panel}
+		\label{filterspane}
+	\end{subfigure}
 
-	\caption{Example of using more path filters together in a small dataset generated on the Cornell Box scene of $64 \times 64$ pixels and 32 spp.}
+	\caption{(\textbf{a}, \textbf{b}, \textbf{c}) Example of using more path filters together in a small dataset generated on the Cornell Box scene of $64 \times 64$ pixels and 32 spp. \\
+	(\textbf{d}) Screenshot of the \textbf{“Filters”} floating panel with two sphere filters and a window filter.}
 	\label{filterstack}
 \end{figure}
 
@@ -174,7 +179,7 @@ The tool uses a \texttt{std::vector<unsigned>} called \texttt{selectedpaths} to 
 \end{equation}
 where $\texttt{selectedpaths}_i$ is the \texttt{selectedpaths} vector after filtering through the $i$th filter and $\texttt{selectedpaths}_0 = \mathcal{S}$.
 
-Users can add, modify and delete filters from the \textbf{“Filters”} floating panel. On the top of it there are three push buttons:
+Users can add, modify and delete filters from the \textbf{“Filters”} floating panel (fig. \ref{filterspane}). On the top of it there are three push buttons:
 \begin{description}
 	\item[“Update paths”] Since path filtering is an operation that takes a noticeable time to complete, the user must explicitly express the will to apply the current filter set to the paths.
 	\item[“Add sphere”] After the user clicks this, they have to click on a surface of the scene. A filter sphere will appear on the clicked surface.
@@ -187,7 +192,7 @@ This was the first filter added. It has a spherical shape and simply selects all
 
 The actual path filtering is plainly done by computing the squared distance between each bounce of each path and the sphere center. For each bounce with a computed distance less than the sphere radius, its entire path gets flagged as selected. This allows for a path-wise early termination: if a path has been flagged, it is useless to check the remaining bounces of the same path. Early termination or not, this computation is rather heavy since a render dataset rarely goes under the one hundred million bounces mark. To mitigate the otherwise lengthy waiting times, the computation is done on multiple threads; The set of paths that has to be filtered is divided in $n$ subsets $S_{1...n}$ of roughly the same cardinality, where $n$ is the number of maximum thread concurrency available on the machine. Each subset is coupled with a \texttt{std::vector<unsigned>} that has to hold the indexes of the paths of the subset that satisfy the filter; to avoid memory allocations, these vectors reserve $|S_{1...n}|$ slots each before any computation. Then, $n$ threads start to apply the filter to their assigned subset. Once all of them are done, the content of the vectors --- which are the indexes of the selected paths by each thread --- are moved into \texttt{selectedpaths}, the STL vector keeping the index of all selected paths.
 
-On the viewport the spheres are rendered without passing any vertex buffer to the GPU: first, using hard-coded coordinates and the GLSL \texttt{gl\_VertexID} built-in variable, a cube of side 2 centered on the origin is generated on the vertex shader; then through tessellation new vertices are generated --- every patch level has been set to 3 --- and then displaced on the surface of a unit sphere. Finally scaled and transformed at the end of the tessellation evaluation shader, the resulting triangles are ready to rasterize.
+On the viewport the spheres are rendered without passing any vertex buffer to the GPU: first, using hard-coded coordinates and the GLSL \texttt{gl\_VertexID} built-in variable, a cube of 2 units long side centered on the origin is generated by the vertex shader; then through tessellation new vertices are generated --- every patch level has been set to 3 --- and then displaced on the surface of a unit sphere. Finally scaled and transformed at the end of the tessellation evaluation shader, the resulting triangles are ready to rasterize.
 
 \subsubsection{Window filter}
 The window filter is a rectangle embedded in 3d space that selects all the paths passing through it. After clicking on \textbf{“Add Window”} button, user can spawn a window filter by clicking on a surface; a window facing the camera with its central point lying on the clicked surface will be created. The filter can then be translated, rotated and scaled through the many sliders available in the filter slot on the \textbf{“Filters”} panel. The current interface is rather difficult to use and many things can be done to improve it, such as 3d gizmos, as already suggested for the sphere filter.
@@ -273,7 +278,24 @@ The pass for translucent objects outputs beauty (fig. \ref{beauty_scenepass2}), 
 	\label{translucent_pass}
 \end{figure}
 
-To facilitate scene navigation and readability, some visualization options are provided under the \textbf{“Scene”} section of the \textbf{“Visualization options”} panel:
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.29\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/vizopui1}
+		\caption{\textbf{“Scene”} section}
+		\label{vizopui1}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.29\linewidth}
+		\includegraphics[width=\textwidth]{chapters/chapter_thetool/vizopui2}
+		\caption{\textbf{“Paths”} section}
+		\label{vizopui2}
+	\end{subfigure}
+
+	\caption{Screenshots of the \textbf{“Visualization options”} panel showing its two sections while the \textit{Cornell box} scene is loaded.}
+	\label{blendcolor_fig}
+\end{figure}
+
+To facilitate scene navigation and readability, some visualization options are provided under the \textbf{“Scene”} section of the \textbf{“Visualization options”} panel (fig. \ref{vizopui1}):
 \begin{description}
 	\item[“Blend color”/“Blend alpha”] They perform alpha blending of the fragments of the scene with the user specified color; it comes in handy when a scene has many bright-colored surfaces which can make paths difficult to see. A visual example is provided in figure \ref{blendcolor_fig}.
 	\item[“Geometries”] This collapsible section lets the user toggle visibility and back face culling for either single geometries or all of them together. Users can click on a geometry from the viewport to select it. A selected geometry will be rendered in yellow by the viewport and its name on the \textbf{“Geometries”} list will be highlighted. Geometries can be selected from the list too.
@@ -295,11 +317,11 @@ To facilitate scene navigation and readability, some visualization options are p
 	\label{blendcolor_fig}
 \end{figure}
 
-Right after the scene passes, the paths are rendered. Every time there is a change of the set of the selected paths, the new set is loaded on the GPU. The rendering is done using the \texttt{glMultiDrawArrays} OpenGL render function with the \texttt{GL\_LINE\_STRIP} render mode. This has been proven to be visibly faster than calling \texttt{glDrawArrays} several times inside a \texttt{for} loop. Through the use of the two depth textures generated by the scene render passes (fig. \ref{depth_scenepass1} and \ref{depth_scenepass2}), the path fragments are rendered on two textures: a \textit{front} (fig. \ref{rays_front}) and a \textit{back} (fig. \ref{rays_back}) one. All the fragments that are occluded by neither opaque nor translucent scene geometry end up in the front texture, the ones occluded only by a translucent geometry fill the back texture. Since usually hundreds of thousands of paths pass through a single pixel, the OpenGL built-in alpha blending is enabled. By default, all paths are rasterized with an alpha value directly controlled by the \textbf{“Paths alpha”} slider on the \textbf{“Paths”} section of the \textbf{“Visualization options”} panel. In that section there are also three checkboxes controlling other visual properties of the paths:
+Right after the scene passes, the paths are rendered. Every time there is a change of the set of the selected paths, the new set is loaded on the GPU. The rendering is done using the \texttt{glMultiDrawArrays} OpenGL render function with the \texttt{GL\_LINE\_STRIP} render mode. This has been proven to be visibly faster than calling \texttt{glDrawArrays} several times inside a \texttt{for} loop. Through the use of the two depth textures generated by the scene render passes (fig. \ref{depth_scenepass1} and \ref{depth_scenepass2}), the path fragments are rendered on two textures: a \textit{front} (fig. \ref{rays_front}) and a \textit{back} (fig. \ref{rays_back}) one. All the fragments that are occluded by neither opaque nor translucent scene geometry end up in the front texture, the ones occluded only by a translucent geometry fill the back texture. Since usually hundreds of thousands of paths pass through a single pixel, the OpenGL built-in alpha blending is enabled. By default, all paths are rasterized with an alpha value directly controlled by the \textbf{“Paths alpha”} slider on the \textbf{“Paths”} section of the \textbf{“Visualization options”} panel (fig. \ref{vizopui2}). In that section there are also three checkboxes controlling other visual properties of the paths:
 \begin{description}
 	\item[“Render”] Toggles the rendering of the paths all together. It might be helpful in situations where the user selected too many paths and moving the viewport camera gets difficult.
 	\item[“Depth test”] Toggles the depth test during paths' rendering. It can be handy with cluttered scenes.
-	\item[“Radiance scaling”] When checked, the paths' alpha gets scaled by their transported radiance. In other words, it gives a visual method to pick the rays that carry more light energy than others. This can be useful while determining the origin of fireflies and such rendering artifacts. From the implementation point of view, this is achieved by loading to the GPU a shader storage buffer --- \texttt{sso} for short --- containing the summed radiance of the red, green and blue channels of each path; the shaders then, thanks to the \texttt{gl\_DrawID} variable --- which is available since the \texttt{glMultiDrawArrays} render function is used ---, can access the \texttt{sso} correctly and shade the paths by multiplying the radiance with the user defined path alpha.
+	\item[“Radiance scaling”] When checked, the paths' alpha gets scaled by their transported radiance. In other words, it gives a visual method to pick the rays that carry more light energy than others. This can be used to detect paths carrying an abnormal amount of radiance which could be the source of many rendering artifacts such as fireflies\footnote{In Monte Carlo based rendering, a firefly is a pixel with an abnormally high total radiance. They usually happen on caustics effects or near light sources placed too close to surfaces.}. From the implementation point of view, this is achieved by loading to the GPU a shader storage buffer --- \texttt{sso} for short --- containing the summed radiance of the red, green and blue channels of each path; the shaders then, thanks to the \texttt{gl\_DrawID} variable --- which is available since the \texttt{glMultiDrawArrays} render function is used ---, can access the \texttt{sso} correctly and shade the paths by multiplying the radiance with the user defined path alpha.
 \end{description}
 
 Reached this point, what the viewport rendered until now is composited together.
@@ -460,7 +482,7 @@ Once the triangles have been arranged in the UV space, the actual heatmap has to
 
 Having these \textit{UV $\to$ world mappings} and the texel size in world units at hand, computing the actual heatmap can be done by counting for each pixel the path bounces that lie within a sphere centered on the world point stored in it and having radius equal to the texel size. 
 Although conceptually easy, this algorithm requires a remarkable amount of time to complete; after all, for each pixel of those textures, it has to iterate over all path bounces of the dataset. Once considered that a reasonable dataset has about half a billion bounces, it is clear that this operation takes time. This is further worsened by the impossibility of performing any kind of early termination since knowing that a bounce of a path lies within a sphere does not ensure the other bounces of the same path will not and vice versa.
-To speed up the computation the obvious step of making it multi-threaded has been taken almost immediately and due to the \textit{embarrassingly parallel} nature of the algorithm, time improvements are linearly proportional to the number of available CPU cores. Even with multi-threading and further measures taken to reduce memory allocation and cache trashing, the performances are still disastrous. To give an idea, to generate a heatmap of a $512 \times 512$ pixels render with 256 spp of the \textit{Modern Hall} \cite{bitterliscenes} scene on an Intel Core i7-6820HQ (4 physical cores, 8 concurrent threads), it takes about five hours. Possible improvements were thought, most of them regarding embedding the bounces in a spatial acceleration structure, but they have never been implemented and left for future developments. At the beginning it was planned that the tool would compute heatmaps on the fly and everything was designed to accommodate that but, as soon as it was clear the times to generate one are unbearably long, the system has been coded to quietly dumps a heatmap on disk as soon as it is done computing and to load that copy the next time the same dataset is loaded. It was also thought of making the heatmap generation optional and asynchronous --- now it is blocking --- but even this never saw the light due to time constraints.
+To speed up the computation the obvious step of making it multi-threaded has been taken almost immediately and due to the \textit{embarrassingly parallel} nature of the algorithm, time improvements are linearly proportional to the number of available CPU cores. Even with multi-threading and further measures taken to reduce memory allocation and cache trashing, the performances are still disastrous. To give an idea, to generate a heatmap of a $512 \times 512$ pixels render with 256 spp of the \textit{Modern Hall} \cite{bitterliscenes} scene on an Intel Core i7-6820HQ (4 physical cores, 8 concurrent threads), it takes about five hours. Possible improvements were thought, most of them regarding embedding the bounces in a spatial acceleration structure, but they have never been implemented and left for future developments. At the beginning it was planned that the tool would compute heatmaps on the fly and everything was designed to accommodate that but, as soon as it was clear the times to generate one are unbearably long, the system has been coded to quietly dump a heatmap on disk as soon as it is done computing and to load that copy the next time the same dataset is loaded. It was also thought of making the heatmap generation optional and asynchronous --- now it is blocking --- but even this never saw the light due to time constraints.
 
 %TODO: It might be extended by letting users draw transfer maps over a histogram.
 
