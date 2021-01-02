@@ -366,6 +366,16 @@ To make filters appear over the paths, they are rendered last. They are first re
 
 %TODO think about a pipeline overview figure
 
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{chapters/chapter_thetool/renderpipeline}
+
+	\caption{Diagram summarizing the render pipeline stages. Each gray box encapsulates a render stage. \textsf{\textbf{A}} is the opaque scene pass, \textsf{\textbf{B}} the transparent scene pass, \textsf{\textbf{C}} the paths pass, \textsf{\textbf{D}} the first compositing, \textsf{\textbf{E}} the filters mask, and \textsf{\textbf{F}} the second and final compositing.}
+	\label{renderpipeline}
+\end{figure}
+
+To summarize now that the whole rendering process has been presented, a diagram portraying an overview of it is presented in figure \ref{renderpipeline}. 
+
 \subsubsection{Camera controls}
 Users can navigate the scene using camera controls common to many commercial animation suite packages:
 \begin{description}
@@ -471,15 +481,15 @@ During development, it has been briefly considered assigning to every triangle i
 \begin{figure}
 	\centering
 	\begin{subfigure}[t]{0.24\linewidth}
-		\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld0}
+		\frame{\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld0}}
 		\caption{Map n.0}
 	\end{subfigure}
 	\begin{subfigure}[t]{0.24\linewidth}
-		\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld1}
+		\frame{\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld1}}
 		\caption{Map n.1}
 	\end{subfigure}
 	\begin{subfigure}[t]{0.24\linewidth}
-		\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld2}
+		\frame{\includegraphics[width=\textwidth]{chapters/chapter_thetool/uvworld2}}
 		\caption{Map n.2}
 	\end{subfigure}
 
