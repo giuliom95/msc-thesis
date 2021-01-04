@@ -88,7 +88,10 @@
   \section*{Abstract}
 \fi
 
-We are presenting a visualization tool capable of showing how the paths shot by a path tracer interact in a scene. The tool let the user explore all, not a subset, the paths that contribute to a final render. It comes with a data gathering C++ library that can be plugged into the code base of existing path tracers and can gather the entirety of the needed data exposing only two methods. The tool provides several utilities to filter paths with intuitive spatial queries and to visualize information on the filtered data. As detailed in this work, performance and memory consumption expediences make the tool usable on consumer-grade calculators. Examples of usage are provided to show how the provided features of the tool combine to help users exploring, debugging and analyzing datasets gathered from a third party path tracer.
+We are presenting a visualization tool capable of showing how the paths shot by a path tracer interact in a scene. The tool lets the user interactively explore all the paths that contribute to a final render.
+Since path tracers commonly shoot more than fifty million paths per render, we are showing how clever data gathering and memory management enables the tool to handle such amount of data on consumer-grade computers. 
+The data gathering is performed by a provided C++ library that can be plugged into the code base of existing path tracers and can collect the entirety of the needed data exposing only two methods.
+To make the extensive data sets available for interactive exploration to the user, the tool provides several utilities both to filter paths with intuitive spatial queries and to visualize information on the filtered data. Examples of usage are provided to show how the tool's features combine to help users exploring, debugging and analyzing datasets gathered from a third party path tracer.
 
 \cleardoublepage
 
